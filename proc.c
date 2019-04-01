@@ -571,14 +571,14 @@ int
 ps()
 {
   struct proc *p = ptable.proc;
-  char *pstate_string[6] = {"UNUSED  ", "EMBRYO  ", "SLEEPING", "RUNNABLE", "RUNNING ", "ZOMBIE "};
+  char *pstate_string[6] = {"UNUSED  ", "EMBRYO  ", "SLEEPING", "RUNNABLE", "RUNNING ", "ZOMBIE  "};
 
 
-  cprintf("name\tpid\tstate\tpriority\truntime\ttick %d\n",ticks);
+  cprintf("name\tpid\tstate\t\tpriority\truntime\t\ttick %d\n",ticks);
   for(int i = 0; i < NPROC; i++){
     if(p[i].state == UNUSED)
       continue;  
-    cprintf("%s\t%d\t%s\t%d\t%d\n",p[i].name,p[i].pid,pstate_string[p[i].state],p[i].nv,p[i].runtime);
+    cprintf("%s\t%d\t%s\t%d\t\t%d\n",p[i].name,p[i].pid,pstate_string[p[i].state],p[i].nv,p[i].runtime);
   }
   return 24; 
 }
