@@ -88,6 +88,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->runtime = 0;
 
   release(&ptable.lock);
 
@@ -138,6 +139,7 @@ userinit(void)
   p->tf->eflags = FL_IF;
   p->tf->esp = PGSIZE;
   p->tf->eip = 0;  // beginning of initcode.S
+  p->nv = 5;
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
@@ -199,6 +201,7 @@ fork(void)
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
+  np->nv = curproc->nv;
 
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -531,4 +534,51 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+int
+setnice(int pid, int nv)
+{
+  struct proc *p;
+  
+  if(nv >= 1 && nv <= 10){
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->pid == pid){
+        p->nv = nv;
+        return nv;
+      }
+    }
+  }
+  return -1;
+}
+
+int
+getnice(int pid)
+{
+  struct proc *p;
+  int nv;
+  
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->pid == pid){
+      nv = p->nv;
+      return nv;
+    }
+  }
+  return -1;
+}
+
+int
+ps()
+{
+  struct proc *p = ptable.proc;
+  char *pstate_string[6] = {"UNUSED  ", "EMBRYO  ", "SLEEPING", "RUNNABLE", "RUNNING ", "ZOMBIE "};
+
+
+  cprintf("name\tpid\tstate\tpriority\truntime\ttick %d\n",ticks);
+  for(int i = 0; i < NPROC; i++){
+    if(p[i].state == UNUSED)
+      continue;  
+    cprintf("%s\t%d\t%s\t%d\t%d\n",p[i].name,p[i].pid,pstate_string[p[i].state],p[i].nv,p[i].runtime);
+  }
+  return 24; 
 }
