@@ -14,6 +14,9 @@ struct {
 
 static struct proc *initproc;
 
+
+
+int array[11] = {1024, 820, 655, 526, 423, 335, 272, 215, 172, 137, 110};
 int nextpid = 1;
 extern void forkret(void);
 extern void trapret(void);
@@ -140,7 +143,7 @@ userinit(void)
   p->tf->esp = PGSIZE;
   p->tf->eip = 0;  // beginning of initcode.S
   p->nv = 5;
-
+  p->weight = array[p->nv];
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
 
@@ -202,7 +205,7 @@ fork(void)
   np->parent = curproc;
   *np->tf = *curproc->tf;
   np->nv = curproc->nv;
-
+  np->weight = curproc->weight;
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
 
@@ -257,6 +260,10 @@ exit(void)
 
   // Pass abandoned children to init.
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+  
+    p->nruntime =0;
+    p->runtime =0;
+  
     if(p->parent == curproc){
       p->parent = initproc;
       if(p->state == ZOMBIE)
@@ -326,6 +333,8 @@ void
 scheduler(void)
 {
   struct proc *p;
+  struct proc *p1;
+  int temp =0;
   struct cpu *c = mycpu();
   c->proc = 0;
   
@@ -336,16 +345,46 @@ scheduler(void)
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    
+      temp =0;
+    
       if(p->state != RUNNABLE)
         continue;
 
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
+      
+      for(p1 = ptable.proc; p1 < &ptable.proc[NPROC]; p1++){
+      
+      	if(p1->state == RUNNABLE){
+      	
+      		temp = temp + p1->weight;
+      	
+      	}
+      	else if(p1->state == RUNNING){
+      	
+      		temp = temp + p1->weight;
+      		
+      	}
+      
+      
+      }
+      
+      total_w = temp;
+      
+      if(total_w !=0){
+      p->time_slice = 1000 * 10 * (p->weight)/(total_w);
+      }
+      
+      
+      
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
-
+      
+      
+      
       swtch(&(c->scheduler), p->context);
       switchkvm();
 
@@ -390,6 +429,9 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
   myproc()->state = RUNNABLE;
+  myproc()->nruntime = 0;
+  
+  
   sched();
   release(&ptable.lock);
 }
@@ -441,7 +483,7 @@ sleep(void *chan, struct spinlock *lk)
   // Go to sleep.
   p->chan = chan;
   p->state = SLEEPING;
-
+  p->nruntime =0;
   sched();
 
   // Tidy up.
@@ -491,6 +533,9 @@ kill(int pid)
       // Wake process from sleep if necessary.
       if(p->state == SLEEPING)
         p->state = RUNNABLE;
+        
+      p->nruntime =0;
+      p->runtime =0;  
       release(&ptable.lock);
       return 0;
     }
@@ -541,10 +586,20 @@ setnice(int pid, int nv)
 {
   struct proc *p;
   
-  if(nv >= 1 && nv <= 10){
+  
+  int pos;
+  
+  if(nv >= -5 && nv <= 5){
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->pid == pid){
         p->nv = nv;
+        
+        pos= nv +5;
+        p->weight = array[pos];
+        
+        
+        
+        
         return nv;
       }
     }
@@ -572,13 +627,13 @@ ps()
 {
   struct proc *p = ptable.proc;
   char *pstate_string[6] = {"UNUSED  ", "EMBRYO  ", "SLEEPING", "RUNNABLE", "RUNNING ", "ZOMBIE  "};
+  
 
-
-  cprintf("name\tpid\tstate\t\tpriority\truntime\t\ttick %d\n",ticks);
+  cprintf("name\tpid\tstate\t\tpriority\truntime\t\tts\tnr\tvr\ttotal_w\ttick %d \tmticks %d \n",ticks, mticks);
   for(int i = 0; i < NPROC; i++){
     if(p[i].state == UNUSED)
       continue;  
-    cprintf("%s\t%d\t%s\t%d\t\t%d\n",p[i].name,p[i].pid,pstate_string[p[i].state],p[i].nv,p[i].runtime);
+    cprintf("%s\t%d\t%s\t%d\t\t%d\t\t%d\t%d\t%d\t%d\n",p[i].name, p[i].pid, pstate_string[p[i].state], p[i].nv, p[i].runtime, p[i].time_slice, p[i].nruntime, p[i].vruntime, total_w);
   }
   return 24; 
 }

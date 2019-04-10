@@ -10,6 +10,11 @@ struct sleeplock;
 struct stat;
 struct superblock;
 
+
+//temporary variable
+extern int total_w;
+extern int mticks;
+
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);

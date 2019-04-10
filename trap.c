@@ -13,6 +13,8 @@ struct gatedesc idt[256];
 extern uint vectors[];  // in vectors.S: array of 256 entry pointers
 struct spinlock tickslock;
 uint ticks;
+int mticks;
+int total_w;
 
 void
 tvinit(void)
@@ -37,6 +39,7 @@ void
 trap(struct trapframe *tf)
 {
   struct proc *p;
+  struct proc *p1;
   if(tf->trapno == T_SYSCALL){
     if(myproc()->killed)
       exit();
@@ -52,6 +55,7 @@ trap(struct trapframe *tf)
     if(cpuid() == 0){
       acquire(&tickslock);
       ticks++;
+      mticks = ticks *1000;
       p = myproc();
       if(p != 0 && p->state == RUNNING){
         p->runtime++;
@@ -104,6 +108,38 @@ trap(struct trapframe *tf)
   // until it gets to the regular system call return.)
   if(myproc() && myproc()->killed && (tf->cs&3) == DPL_USER)
     exit();
+    
+    
+  if(tf->trapno == T_IRQ0+IRQ_TIMER){
+  
+  	p1 = myproc();
+  	
+  	if(p1 !=0 && p1->state ==RUNNING){
+  		p1->nruntime++;
+  		
+  	}
+  	else if(p1 !=0 && p1->state !=RUNNING){
+  		
+  		
+  		p1->nruntime = 0;
+  		
+  	}
+  	
+  	
+  	if(p1 !=0 && p1->state ==RUNNING){
+  		if(p1->weight !=0){
+  		p1->vruntime = (p1->runtime) * 1000 * 335/(p1->weight);
+  		}
+  		/*if(p1->time_slice <= (p1->nruntime) * 1000){
+  			yield();
+  		
+  		}*/
+  		
+  	}
+  	
+  	
+  
+  }
 
   // Force process to give up CPU on clock tick.
   // If interrupts were on while locks held, would need to check nlock.
