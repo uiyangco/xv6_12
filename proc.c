@@ -92,7 +92,10 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
   p->runtime = 0;
+  //p->nv = 5;
+  //p->weight = array[(p->nv)+5];
 
+  
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -125,6 +128,8 @@ void
 userinit(void)
 {
   struct proc *p;
+  struct proc *p1;
+  int temp=0;
   extern char _binary_initcode_start[], _binary_initcode_size[];
 
   p = allocproc();
@@ -143,7 +148,7 @@ userinit(void)
   p->tf->esp = PGSIZE;
   p->tf->eip = 0;  // beginning of initcode.S
   p->nv = 5;
-  p->weight = array[p->nv];
+  p->weight = array[(p->nv)+5];
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
 
@@ -154,6 +159,29 @@ userinit(void)
   acquire(&ptable.lock);
 
   p->state = RUNNABLE;
+  
+  
+  
+  
+  for(p1 = ptable.proc; p1 < &ptable.proc[NPROC]; p1++){
+      
+   if(p1->state == RUNNABLE){
+      	
+        temp = temp + p1->weight;
+        //cprintf("runnable pid :  %d \n", p1->pid);
+      	
+   }
+   else if(p1->state == RUNNING){
+      	
+      	temp = temp + p1->weight;
+      	//cprintf("running pid :  %d \n", p1->pid);
+      		
+   }
+      
+      
+ }
+  
+  total_w = temp;
 
   release(&ptable.lock);
 }
@@ -186,7 +214,9 @@ int
 fork(void)
 {
   int i, pid;
+  int temp =0;
   struct proc *np;
+  struct proc *p1;
   struct proc *curproc = myproc();
 
   // Allocate process.
@@ -221,6 +251,32 @@ fork(void)
   acquire(&ptable.lock);
 
   np->state = RUNNABLE;
+  
+  
+  for(p1 = ptable.proc; p1 < &ptable.proc[NPROC]; p1++){
+      
+   if(p1->state == RUNNABLE){
+      	
+        temp = temp + p1->weight;
+        //cprintf("runnable pid :  %d \n", p1->pid);
+      	
+   }
+   else if(p1->state == RUNNING){
+      	
+      	temp = temp + p1->weight;
+      	//cprintf("running pid :  %d \n", p1->pid);
+      		
+   }
+      
+      
+ }
+  
+  total_w = temp;
+
+  
+  
+  
+  
 
   release(&ptable.lock);
 
@@ -334,6 +390,7 @@ scheduler(void)
 {
   struct proc *p;
   struct proc *p1;
+
   int temp =0;
   struct cpu *c = mycpu();
   c->proc = 0;
@@ -347,7 +404,7 @@ scheduler(void)
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     
       temp =0;
-    
+   
       if(p->state != RUNNABLE)
         continue;
 
@@ -355,16 +412,26 @@ scheduler(void)
       // to release ptable.lock and then reacquire it
       // before jumping back to us.
       
+      
+      
+      c->proc = p;
+      switchuvm(p);
+      p->state = RUNNING;
+      
+      
+      
       for(p1 = ptable.proc; p1 < &ptable.proc[NPROC]; p1++){
       
       	if(p1->state == RUNNABLE){
       	
       		temp = temp + p1->weight;
+      		//cprintf("runnable pid :  %d \n", p1->pid);
       	
       	}
       	else if(p1->state == RUNNING){
       	
       		temp = temp + p1->weight;
+      		//cprintf("running pid :  %d \n", p1->pid);
       		
       	}
       
@@ -372,16 +439,13 @@ scheduler(void)
       }
       
       total_w = temp;
-      
+      	//cprintf("sosososo :   %d\n",total_w);
       if(total_w !=0){
       p->time_slice = 1000 * 10 * (p->weight)/(total_w);
       }
       
       
       
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
       
       
       
@@ -628,7 +692,7 @@ ps()
   struct proc *p = ptable.proc;
   char *pstate_string[6] = {"UNUSED  ", "EMBRYO  ", "SLEEPING", "RUNNABLE", "RUNNING ", "ZOMBIE  "};
   
-
+	cprintf("my pid :  %d \n", myproc()->pid);
   cprintf("name\tpid\tstate\t\tpriority\truntime\t\tts\tnr\tvr\ttotal_w\ttick %d \tmticks %d \n",ticks, mticks);
   for(int i = 0; i < NPROC; i++){
     if(p[i].state == UNUSED)
