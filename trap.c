@@ -15,7 +15,7 @@ struct spinlock tickslock;
 uint ticks;
 int mticks;
 int total_w;
-
+int tw;
 void
 tvinit(void)
 {
@@ -118,33 +118,33 @@ trap(struct trapframe *tf)
   	
   	
   	
+  	
+  	
+  	
+  	
+  	
+  	
   	if(p1 !=0 && p1->state ==RUNNING){
-  		p1->nruntime++;
-  		
+  	
+  	
   		if(total_w !=0){
 	        p1->time_slice = 1000 * 10 * (p1->weight)/(total_w);
 	        }
-	  		
-  		
-  	}
-  	else if(p1 !=0 && p1->state !=RUNNING){
-  		
-  		
-  		p1->nruntime = 0;
-  		
-  	}
   	
-  	
-  	if(p1 !=0 && p1->state ==RUNNING){
   		if(p1->weight !=0){
   		p1->vruntime = (p1->runtime) * 1000 * 335/(p1->weight);
   		}
   		if(p1->time_slice <= (p1->nruntime) * 1000){
+  			total_w = tw;
   			yield();
   		
   		}
   		
+  		p1->nruntime++;
+  		
+  		
   	}
+  	
   	
   	
   

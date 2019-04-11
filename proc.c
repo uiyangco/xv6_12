@@ -92,8 +92,8 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
   p->runtime = 0;
-  //p->nv = 5;
-  //p->weight = array[(p->nv)+5];
+  p->nv = 5;
+  p->weight = array[(p->nv)+5];
 
   
   release(&ptable.lock);
@@ -215,6 +215,7 @@ fork(void)
 {
   int i, pid;
   int temp =0;
+  //int check_running =0;
   struct proc *np;
   struct proc *p1;
   struct proc *curproc = myproc();
@@ -264,6 +265,7 @@ fork(void)
    else if(p1->state == RUNNING){
       	
       	temp = temp + p1->weight;
+      	//check_running =1;
       	//cprintf("running pid :  %d \n", p1->pid);
       		
    }
@@ -271,8 +273,8 @@ fork(void)
       
  }
   
-  total_w = temp;
-
+  tw = temp;
+  
   
   
   
@@ -545,14 +547,15 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
   myproc()->state = RUNNABLE;
-  myproc()->nruntime = 0;
+  
   
   
   sched();
   release(&ptable.lock);
   //cprintf("\n\n\n");
   //cprintf("yield ps!!!!\n");
- // ps();
+  //ps();
+  myproc()->nruntime =0;
   
 }
 
@@ -624,49 +627,43 @@ wakeup1(void *chan)
 {
   struct proc *p;
   struct proc *p1;
-  int temp =0;
+  
   int min_vruntime = 0;
   int check =0;
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == SLEEPING && p->chan == chan)
+    if(p->state == SLEEPING && p->chan == chan){
+    
       p->state = RUNNABLE;
       
   
-  for(p1 = ptable.proc; p1 <&ptable.proc[NPROC]; p1++){
-  
-  	if(p1->state == RUNNABLE){
-  	
-  		temp = temp + p1->weight;
-  	}
-  	else if(p1->state == RUNNING){
-  	
-  		temp = temp + p1->weight;
-  	}
-  	
-  	
-  	if(check ==0){
-  	
-  		if(p1->state == RUNNABLE || p1->state == RUNNING){
-  			
-  			min_vruntime = p1->vruntime;
-			check =1;
-  		}
-  	
-  		
-  	}
-  	else if(check ==1){
-  		if(min_vruntime > p1->vruntime){
-  			min_vruntime = p1->vruntime;
-  		}
-  	}
-  	
+	  for(p1 = ptable.proc; p1 <&ptable.proc[NPROC]; p1++){
+	  
+	  	
+	  	
+	  	
+	  	if(check ==0){
+	  	
+	  		if(p1->state == RUNNABLE || p1->state == RUNNING){
+	  			
+	  			min_vruntime = p1->vruntime;
+				check =1;
+	  		}
+	  	
+	  		
+	  	}
+	  	else if(check ==1){
+	  		if(min_vruntime > p1->vruntime){
+	  			min_vruntime = p1->vruntime;
+	  		}
+	  	}
+	  	
+	  
+	  }
+	  
+	  p->vruntime = min_vruntime -(1000 * 335/(p->weight));
+	  
   
   }
-  
-  min_vruntime = min_vruntime -1000;
-  
-  total_w = temp;
-  
   
 }
 
@@ -750,6 +747,7 @@ setnice(int pid, int nv)
   
   int pos;
   int temp =0;
+  //int check_running =0;
   
   if(nv >= -5 && nv <= 5){
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
@@ -766,18 +764,19 @@ setnice(int pid, int nv)
         
         	if(p1->state == RUNNING){
       			temp = temp + p1->weight;
+      			//check_running =1;
       	
 	        }
 	        else if(p1->state == RUNNABLE){
 	      		temp = temp + p1->weight;
 	        }
 	        
-	        total_w = temp;
+	        
         
         
         }
         
-        
+        	tw = temp;
         
         
         return nv;

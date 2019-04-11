@@ -20,19 +20,20 @@ void test_p1_2()
 		for(i = 0; i < 2; i++){
 			for ( z = 0; z < 3000000.0; z += 0.1 )
 				x =  x + 3.14 * 89.64;
-		        printf(1, "child!!!!\n");
+		        
+		        
 			ps();
 			//yield();
 		}
 		
-		printf(1, "exit before\n");
+	
 		exit();
-		printf(1, "exit after\n");
+		
 	} else {	//parent
 		for(j = 0; j < 2; j++){
 			for ( z = 0; z < 3000000.0; z += 0.1 )
 				x =  x + 3.14 * 89.64;
-			printf(1, "parent!!!!\n");
+			
 			ps();
 			//yield();
 		}

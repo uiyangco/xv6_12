@@ -28,6 +28,7 @@ int getnice(int);
 int ps(void);
 int yield(void);
 
+
 // ulib.c
 int stat(const char*, struct stat*);
 char* strcpy(char*, const char*);

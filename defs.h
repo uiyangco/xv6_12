@@ -14,6 +14,7 @@ struct superblock;
 //temporary variable
 extern int total_w;
 extern int mticks;
+extern int tw;
 
 // bio.c
 void            binit(void);
