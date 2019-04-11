@@ -40,6 +40,8 @@ trap(struct trapframe *tf)
 {
   struct proc *p;
   struct proc *p1;
+  
+  //char *pstate_string[6] = {"UNUSED  ", "EMBRYO  ", "SLEEPING", "RUNNABLE", "RUNNING ", "ZOMBIE  "};
   if(tf->trapno == T_SYSCALL){
     if(myproc()->killed)
       exit();
@@ -114,8 +116,15 @@ trap(struct trapframe *tf)
   
   	p1 = myproc();
   	
+  	
+  	
   	if(p1 !=0 && p1->state ==RUNNING){
   		p1->nruntime++;
+  		
+  		if(total_w !=0){
+	        p1->time_slice = 1000 * 10 * (p1->weight)/(total_w);
+	        }
+	  		
   		
   	}
   	else if(p1 !=0 && p1->state !=RUNNING){
@@ -130,10 +139,10 @@ trap(struct trapframe *tf)
   		if(p1->weight !=0){
   		p1->vruntime = (p1->runtime) * 1000 * 335/(p1->weight);
   		}
-  		/*if(p1->time_slice <= (p1->nruntime) * 1000){
+  		if(p1->time_slice <= (p1->nruntime) * 1000){
   			yield();
   		
-  		}*/
+  		}
   		
   	}
   	
