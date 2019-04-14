@@ -81,10 +81,13 @@ allocproc(void)
 
   acquire(&ptable.lock);
 
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+  
+  
+  
     if(p->state == UNUSED)
       goto found;
-
+  }
   release(&ptable.lock);
   return 0;
 
@@ -94,7 +97,8 @@ found:
   p->runtime = 0;
   p->nv = 5;
   p->weight = array[(p->nv)+5];
-
+  p->fvruntime = 0;
+  p->vruntime = 0;
   
   release(&ptable.lock);
 
@@ -151,7 +155,8 @@ userinit(void)
   p->weight = array[(p->nv)+5];
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
-
+  p->vruntime =0;
+  p->fvruntime =0;
   // this assignment to p->state lets other cores
   // run this process. the acquire forces the above
   // writes to be visible, and the lock is also needed
@@ -177,12 +182,13 @@ userinit(void)
       	//cprintf("running pid :  %d \n", p1->pid);
       		
    }
+   
       
       
  }
   
   total_w = temp;
-
+  
   release(&ptable.lock);
 }
 
@@ -215,10 +221,45 @@ fork(void)
 {
   int i, pid;
   int temp =0;
+  int ch1 =0;
+  int temp1 =0;
+  int temp2 =0;
   //int check_running =0;
   struct proc *np;
   struct proc *p1;
   struct proc *curproc = myproc();
+  
+  
+  
+  for(p1 = ptable.proc; p1 < &ptable.proc[NPROC]; p1++){
+   
+   if(p1->pid ==1){
+   	if(p1->vruntime <0){
+   		p1->vruntime = (p1->runtime) * 1000 * 335/(p1->weight);
+   		ch1 =1;
+   		temp1 = p1->vruntime;
+   		p1->fvruntime =0;
+   	}
+   	temp2 = p1->vruntime;
+   }
+   if(p1->pid ==2){
+   	if(ch1 ==0){
+   		if(p1->vruntime <0){
+   			p1->vruntime = temp2 + (p1->runtime) * 1000 * 335/(p1->weight);
+   			p1->fvruntime =temp2;
+   		}
+   	}
+   	else if(ch1 ==1){
+   		p1->vruntime = temp1 + (p1->runtime) * 1000 * 335/(p1->weight);
+   		p1->fvruntime =temp1;
+   	}
+   
+   }
+  
+  }
+  
+  
+  
 
   // Allocate process.
   if((np = allocproc()) == 0){
@@ -237,6 +278,13 @@ fork(void)
   *np->tf = *curproc->tf;
   np->nv = curproc->nv;
   np->weight = curproc->weight;
+  if(curproc->vruntime >=0){
+  np->fvruntime = curproc->vruntime;
+  }
+  else{
+  np->fvruntime = curproc->fvruntime;
+  }
+  np->vruntime = curproc->vruntime;
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
 
@@ -248,14 +296,19 @@ fork(void)
   safestrcpy(np->name, curproc->name, sizeof(curproc->name));
 
   pid = np->pid;
-
+  cprintf("forking child %d  :   %d\n ", pid , np->fvruntime);
+  cprintf("forking parent fvrun %d  :   %d\n ", pid , curproc->fvruntime);
   acquire(&ptable.lock);
 
   np->state = RUNNABLE;
   
   
   for(p1 = ptable.proc; p1 < &ptable.proc[NPROC]; p1++){
-      
+   
+ 
+  
+   
+   
    if(p1->state == RUNNABLE){
       	
         temp = temp + p1->weight;
@@ -553,8 +606,8 @@ yield(void)
   sched();
   release(&ptable.lock);
   //cprintf("\n\n\n");
-  //cprintf("yield ps!!!!\n");
-  //ps();
+  cprintf("yield ps!!!!\n");
+  ps();
   myproc()->nruntime =0;
   
 }

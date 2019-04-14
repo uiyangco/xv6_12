@@ -55,6 +55,7 @@ struct proc {
   int time_slice;
   int weight;
   int nruntime;
+  int fvruntime;
 };
 
 // Process memory is laid out contiguously, low addresses first:

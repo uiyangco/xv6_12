@@ -16,6 +16,7 @@ uint ticks;
 int mticks;
 int total_w;
 int tw;
+
 void
 tvinit(void)
 {
@@ -41,6 +42,7 @@ trap(struct trapframe *tf)
   struct proc *p;
   struct proc *p1;
   
+
   //char *pstate_string[6] = {"UNUSED  ", "EMBRYO  ", "SLEEPING", "RUNNABLE", "RUNNING ", "ZOMBIE  "};
   if(tf->trapno == T_SYSCALL){
     if(myproc()->killed)
@@ -120,10 +122,6 @@ trap(struct trapframe *tf)
   	
   	
   	
-  	
-  	
-  	
-  	
   	if(p1 !=0 && p1->state ==RUNNING){
   	
   	
@@ -132,8 +130,23 @@ trap(struct trapframe *tf)
 	        }
   	
   		if(p1->weight !=0){
-  		p1->vruntime = (p1->runtime) * 1000 * 335/(p1->weight);
+	  		
+  		
+  		p1->vruntime = p1->fvruntime + (p1->runtime) * 1000 * 335/(p1->weight);
+  		
+  		
+  			
+  		
+  		
+  		
+  		cprintf("fvruntime %d :   %d\n",p1->pid ,p1->fvruntime);
+  		/*cprintf("vruntime %d :   %d\n",p1->pid ,p1->vruntime);
+  		cprintf("runtime %d :    %d \n",p1->pid ,p1->runtime);
+  		cprintf("weight %d :    %d \n",p1->pid ,p1->weight);*/
   		}
+  		
+  		
+  		
   		if(p1->time_slice <= (p1->nruntime) * 1000){
   			total_w = tw;
   			yield();
