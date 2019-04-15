@@ -221,48 +221,10 @@ fork(void)
 {
   int i, pid;
   int temp =0;
-  //int ch1 =0;
-  //int temp1 =0;
-  //int temp2 =0;
-  //int check_running =0;
+ 
   struct proc *np;
   struct proc *p1;
   struct proc *curproc = myproc();
-  
-  
-  /*if(c1 < 3){
-  for(p1 = ptable.proc; p1 < &ptable.proc[NPROC]; p1++){
-	   
-	   if(p1->pid ==1){
-	   	if(p1->vruntime <0){
-	   		p1->vruntime = (p1->runtime) * 1000 * 335/(p1->weight);
-	   		ch1 =1;
-	   		temp1 = p1->vruntime;
-	   		p1->fvruntime =0;
-	   	}
-	   	temp2 = p1->vruntime;
-	   }
-	   if(p1->pid ==2){
-	   	if(ch1 ==0){
-	   		if(p1->vruntime <0){
-	   			p1->vruntime = temp2 + (p1->runtime) * 1000 * 335/(p1->weight);
-	   			p1->fvruntime =temp2;
-	   		}
-	   	}
-	   	else if(ch1 ==1){
-	   		p1->vruntime = temp1 + (p1->runtime) * 1000 * 335/(p1->weight);
-	   		p1->fvruntime =temp1;
-	   	}
-	   
-	   }
-  	
-  }
-  c1 = c1+1;
-  }*/
-  
-  
-
-  
   
 
   // Allocate process.
@@ -895,7 +857,7 @@ ps()
   
 	//cprintf("my pid :  %d \n", myproc()->pid);
   //cprintf("name\tpid\tstate\t\tpriority\truntime\t\tts\tnr\tvr\ttotal_w \tmticks %d \n", mticks);
-  cprintf("name\t\tpid\tstate\t\tpriority\truntime\t\truntime/weight\t\tvr\t\tmticks %d \n", mticks);
+  cprintf("name\t\tpid\tstate\t\tpriority\truntime\t\truntime/weight\t\tvr\t\tmticks %d000 \n", ticks);
   for(int i = 0; i < NPROC; i++){
     if(p[i].state == UNUSED)
       continue; 
@@ -912,7 +874,7 @@ ps()
        
     //cprintf("%s\t%d\t%s\t%d\t\t%d\t\t%d\t%d\t%d\t%d\n",p[i].name, p[i].pid, pstate_string[p[i].state], p[i].nv, p[i].runtime, p[i].time_slice, p[i].nruntime, p[i].vruntime, total_w);
     
-     cprintf("%s\t\t%d\t%s\t%d\t\t%d\t\t%d\t\t\t%d%d\n",p[i].name, p[i].pid, pstate_string[p[i].state], p[i].nv, p[i].runtime, t1, p[i].extend_v,p[i].vruntime);
+     cprintf("%s\t\t%d\t%s\t%d\t\t%d\t\t%d\t\t     %d%d\n",p[i].name, p[i].pid, pstate_string[p[i].state], p[i].nv, p[i].runtime, t1, p[i].extend_v,p[i].vruntime);
   }
   return 24; 
 }

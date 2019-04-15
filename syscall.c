@@ -109,6 +109,7 @@ extern int sys_ps(void);
 extern int sys_yield(void);
 
 
+
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
 [SYS_exit]    sys_exit,
@@ -135,6 +136,7 @@ static int (*syscalls[])(void) = {
 [SYS_getnice] sys_getnice,
 [SYS_ps]      sys_ps,
 [SYS_yield]   sys_yield,
+
 };
 
 void

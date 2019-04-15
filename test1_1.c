@@ -5,55 +5,72 @@
 
 void test_p1_1()
 {
-	int pid, nice;
-
-	printf(1, "case 1. get nice value of init process: ");
-		if (getnice(1) == 5) 
-			printf(1, "OK\n");
-		else
-			printf(1, "WRONG\n");
-
-		printf(1, "case 2. get nice value of non-existing process: ");
-		if (getnice(100) == -1) 
-			printf(1, "OK\n");
-		else
-			printf(1, "WRONG\n");
-
-		printf(1, "case 3. set nice value of current process: ");
-		pid = getpid();
-		setnice(pid, 3);
-		if (getnice(pid) == 3) 
-			printf(1, "OK\n");
-		else
-			printf(1, "WRONG\n");
-
-		printf(1, "case 4. set nice value of non-existing process: ");
-		if (setnice(100, 3) == -1) 
-			printf(1, "OK\n");
-		else
-			printf(1, "WRONG\n");
-
-		printf(1, "case 5. set wrong nice value of current process: ");
-		if (setnice(pid, -1) == -1 && setnice(pid, 11) == -1) 
-			printf(1, "OK\n");
-		else
-			printf(1, "WRONG\n");
+	int pid = getpid();
+	int i, j;
+	int key =1234;
+	double x = 0, z;
+	//int t;
+	printf(1, "1st pid: %d\n", pid);
+	//t =pid;
+	setnice(pid, 3);
+	pid =fork();
+	for(i=0;i<3;i++){
+	
+		 
+		 if(pid ==0){
+		 pid = fork();
+		 }
 		
-		printf(1, "case 6. get nice value of forked process: ");
-		nice = getnice(pid);
-		pid = fork();
-		if (pid == 0) {	//child
-			if (getnice(getpid()) == nice) { 
-				printf(1, "OK\n");
-				exit();
+	
+	}
+	
+	setnice(pid, -2);
+	
+	
+	
+	
+	//wakeup(key);
+	
+	
+	
+	/*if(pid ==t+1){
+		sleep(1324);
+	}*/
+	
+	if(pid == 0){	//child
+		for(i = 0; i < 2; i++){
+			for ( z = 0; z < 3000000.0; z += 0.1 )
+				x =  x + 3.14 * 89.64;
+		        
+		        
+		        if(i ==1){
+		        if(pid== 0){
+	
+				sleep(key);
+			
 			}
-			else { 
-				printf(1, "WRONG\n");
-				exit();
-			}
+			}		
+			ps();
+			//yield();
 		}
-		else  						//parent
-			wait();
+		
+	
+		exit();
+		
+	} else {	//parent
+		for(j = 0; j < 2; j++){
+			for ( z = 0; z < 3000000.0; z += 0.1 )
+				x =  x + 3.14 * 89.64;
+			
+			if(pid ==5){
+				setnice(pid, 4);
+			}
+			
+			ps();
+			//yield();
+		}
+		wait();
+	}
 }
 
 int main(int argc, char **argv)
