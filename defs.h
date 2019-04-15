@@ -15,6 +15,9 @@ struct superblock;
 extern int total_w;
 extern int mticks;
 extern int tw;
+extern int c1;
+extern int extend_mt;
+//extern int ttt;
 
 // bio.c
 void            binit(void);

@@ -99,7 +99,7 @@ found:
   p->weight = array[(p->nv)+5];
   p->fvruntime = 0;
   p->vruntime = 0;
-  
+  p->extend_v =0;
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -230,34 +230,38 @@ fork(void)
   struct proc *curproc = myproc();
   
   
-  
+  if(c1 < 3){
   for(p1 = ptable.proc; p1 < &ptable.proc[NPROC]; p1++){
-   
-   if(p1->pid ==1){
-   	if(p1->vruntime <0){
-   		p1->vruntime = (p1->runtime) * 1000 * 335/(p1->weight);
-   		ch1 =1;
-   		temp1 = p1->vruntime;
-   		p1->fvruntime =0;
-   	}
-   	temp2 = p1->vruntime;
-   }
-   if(p1->pid ==2){
-   	if(ch1 ==0){
-   		if(p1->vruntime <0){
-   			p1->vruntime = temp2 + (p1->runtime) * 1000 * 335/(p1->weight);
-   			p1->fvruntime =temp2;
-   		}
-   	}
-   	else if(ch1 ==1){
-   		p1->vruntime = temp1 + (p1->runtime) * 1000 * 335/(p1->weight);
-   		p1->fvruntime =temp1;
-   	}
-   
-   }
-  
+	   
+	   if(p1->pid ==1){
+	   	if(p1->vruntime <0){
+	   		p1->vruntime = (p1->runtime) * 1000 * 335/(p1->weight);
+	   		ch1 =1;
+	   		temp1 = p1->vruntime;
+	   		p1->fvruntime =0;
+	   	}
+	   	temp2 = p1->vruntime;
+	   }
+	   if(p1->pid ==2){
+	   	if(ch1 ==0){
+	   		if(p1->vruntime <0){
+	   			p1->vruntime = temp2 + (p1->runtime) * 1000 * 335/(p1->weight);
+	   			p1->fvruntime =temp2;
+	   		}
+	   	}
+	   	else if(ch1 ==1){
+	   		p1->vruntime = temp1 + (p1->runtime) * 1000 * 335/(p1->weight);
+	   		p1->fvruntime =temp1;
+	   	}
+	   
+	   }
+  	
+  }
+  c1 = c1+1;
   }
   
+  
+
   
   
 
@@ -280,11 +284,13 @@ fork(void)
   np->weight = curproc->weight;
   if(curproc->vruntime >=0){
   np->fvruntime = curproc->vruntime;
+  np->vruntime = curproc->vruntime;
   }
   else{
   np->fvruntime = curproc->fvruntime;
+  np->vruntime = 0;
   }
-  np->vruntime = curproc->vruntime;
+  
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
 
@@ -296,8 +302,8 @@ fork(void)
   safestrcpy(np->name, curproc->name, sizeof(curproc->name));
 
   pid = np->pid;
-  cprintf("forking child %d  :   %d\n ", pid , np->fvruntime);
-  cprintf("forking parent fvrun %d  :   %d\n ", pid , curproc->fvruntime);
+  //cprintf("forking child %d  :   %d\n ", pid , np->vruntime);
+  //cprintf("forking parent fvrun %d  :   %d\n ", pid , curproc->vruntime);
   acquire(&ptable.lock);
 
   np->state = RUNNABLE;
@@ -450,12 +456,15 @@ scheduler(void)
   struct proc *p;
   struct proc *p1;
   struct proc *p2;
+  //struct proc *p3;
 
   int temp =0;
   int check =0;
   int min_vruntime =0;
   int min_pid =0;
   int br_pid =0;
+  int br_vruntime =0;
+  int min_extend_v =0;
  // char *pstate_string[6] = {"UNUSED  ", "EMBRYO  ", "SLEEPING", "RUNNABLE", "RUNNING ", "ZOMBIE  "};
   
   struct cpu *c = mycpu();
@@ -466,7 +475,7 @@ scheduler(void)
     sti();
     temp =0;
     check =0;
-    
+   // p3 = c->proc;
     
     
     for(p2 = ptable.proc; p2 < &ptable.proc[NPROC]; p2++){
@@ -474,7 +483,7 @@ scheduler(void)
 	      	if(check ==0){
 	      		
 	      		if(p2->state == RUNNABLE){
-	      		
+	      			min_extend_v = p2->extend_v;
 	      			min_vruntime = p2->vruntime;
 	      			min_pid = p2->pid;
 	      			check =1;
@@ -486,17 +495,39 @@ scheduler(void)
 	      	else if(check ==1){
 	      	
 	      		if(p2->state == RUNNABLE){
-	      			if(min_vruntime > p2->vruntime){
+	      		
+	      			if(min_extend_v > p2->extend_v){
+	      			
+	      				
 	      				min_vruntime = p2->vruntime;
-	      				min_pid = p2->pid;
-	      			}
+		      			min_pid = p2->pid;
+		      			
+		      		}
+		      		else if(min_extend_v == p2->extend_v){
+		      		
+		      			if(min_vruntime > p2->vruntime){
+		      				min_vruntime = p2->vruntime;
+		      				min_pid = p2->pid;
+		      			}
+		      		
+		      		}	
+		      			
 	      		}
 	      	}
          }
+         
+         
+         
+         
+         
+      }
+      
+      if(br_vruntime > min_vruntime){
+      	br_vruntime = min_vruntime;
       }
     
     
-    
+     
     
     
     // Loop over process table looking for process to run.
@@ -521,7 +552,7 @@ scheduler(void)
 	      switchuvm(p);
 	      p->state = RUNNING;
 	      br_pid = p->pid;
-	      
+	      br_vruntime = p->vruntime;
 	      
 	      for(p1 = ptable.proc; p1 < &ptable.proc[NPROC]; p1++){
 	      
@@ -851,21 +882,51 @@ getnice(int pid)
       return nv;
     }
   }
-  return -1;
+  return -6;
 }
 
 int
 ps()
 {
   struct proc *p = ptable.proc;
+  int t1=0;
   char *pstate_string[6] = {"UNUSED  ", "EMBRYO  ", "SLEEPING", "RUNNABLE", "RUNNING ", "ZOMBIE  "};
   
 	//cprintf("my pid :  %d \n", myproc()->pid);
-  cprintf("name\tpid\tstate\t\tpriority\truntime\t\tts\tnr\tvr\ttotal_w\ttick %d \tmticks %d \n",ticks, mticks);
+  //cprintf("name\tpid\tstate\t\tpriority\truntime\t\tts\tnr\tvr\ttotal_w \tmticks %d \n", mticks);
+  cprintf("name\t\tpid\tstate\t\tpriority\truntime\t\truntime/weight\t\tvr\t\tmticks %d \n", mticks);
   for(int i = 0; i < NPROC; i++){
     if(p[i].state == UNUSED)
-      continue;  
-    cprintf("%s\t%d\t%s\t%d\t\t%d\t\t%d\t%d\t%d\t%d\n",p[i].name, p[i].pid, pstate_string[p[i].state], p[i].nv, p[i].runtime, p[i].time_slice, p[i].nruntime, p[i].vruntime, total_w);
+      continue; 
+    
+      
+    
+    
+     t1 = ((p[i].runtime)*1000)/(p[i].weight);
+    
+     if(p[i].state != RUNNING && p[i].state != RUNNABLE){
+     	t1 = 0;
+     }  
+       
+       
+    //cprintf("%s\t%d\t%s\t%d\t\t%d\t\t%d\t%d\t%d\t%d\n",p[i].name, p[i].pid, pstate_string[p[i].state], p[i].nv, p[i].runtime, p[i].time_slice, p[i].nruntime, p[i].vruntime, total_w);
+    
+     cprintf("%s\t\t%d\t%s\t%d\t\t%d\t\t%d\t\t\t%d%d\n",p[i].name, p[i].pid, pstate_string[p[i].state], p[i].nv, p[i].runtime, t1, p[i].extend_v,p[i].vruntime);
   }
   return 24; 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

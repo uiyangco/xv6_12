@@ -16,6 +16,10 @@ uint ticks;
 int mticks;
 int total_w;
 int tw;
+int c1;
+int extend_mt=0;
+
+//int ttt = 2147483640;       //2147483647
 
 void
 tvinit(void)
@@ -42,7 +46,6 @@ trap(struct trapframe *tf)
   struct proc *p;
   struct proc *p1;
   
-
   //char *pstate_string[6] = {"UNUSED  ", "EMBRYO  ", "SLEEPING", "RUNNABLE", "RUNNING ", "ZOMBIE  "};
   if(tf->trapno == T_SYSCALL){
     if(myproc()->killed)
@@ -58,6 +61,12 @@ trap(struct trapframe *tf)
   case T_IRQ0 + IRQ_TIMER:
     if(cpuid() == 0){
       acquire(&tickslock);
+      
+      if(mticks >= 2147482000){
+      	mticks = 0;
+      	extend_mt = extend_mt +1;
+      }
+      
       ticks++;
       mticks = ticks *1000;
       p = myproc();
@@ -123,23 +132,31 @@ trap(struct trapframe *tf)
   	
   	
   	if(p1 !=0 && p1->state ==RUNNING){
-  	
-  	
+  		
+  		
+  		
+  		
   		if(total_w !=0){
 	        p1->time_slice = 1000 * 10 * (p1->weight)/(total_w);
 	        }
   	
   		if(p1->weight !=0){
+	  	
+		  	if(p1->vruntime >= 2147482000){
+		  	
+		  		p1->extend_v = p1->extend_v+1;
+		  		p1->vruntime = 0;
+		  	
+		  	}	
 	  		
-  		
-  		p1->vruntime = p1->fvruntime + (p1->runtime) * 1000 * 335/(p1->weight);
+  		p1->vruntime = p1->vruntime +  1000 * 335/(p1->weight) ;
   		
   		
   			
   		
   		
   		
-  		cprintf("fvruntime %d :   %d\n",p1->pid ,p1->fvruntime);
+  		//cprintf("fvruntime %d :   %d\n",p1->pid ,p1->fvruntime);
   		/*cprintf("vruntime %d :   %d\n",p1->pid ,p1->vruntime);
   		cprintf("runtime %d :    %d \n",p1->pid ,p1->runtime);
   		cprintf("weight %d :    %d \n",p1->pid ,p1->weight);*/
