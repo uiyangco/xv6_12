@@ -97,7 +97,7 @@ found:
   p->runtime = 0;
   p->nv = 5;
   p->weight = array[(p->nv)+5];
-  p->fvruntime = 0;
+  
   p->vruntime = 0;
   p->extend_v =0;
   release(&ptable.lock);
@@ -156,7 +156,7 @@ userinit(void)
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
   p->vruntime =0;
-  p->fvruntime =0;
+  
   // this assignment to p->state lets other cores
   // run this process. the acquire forces the above
   // writes to be visible, and the lock is also needed
@@ -221,16 +221,16 @@ fork(void)
 {
   int i, pid;
   int temp =0;
-  int ch1 =0;
-  int temp1 =0;
-  int temp2 =0;
+  //int ch1 =0;
+  //int temp1 =0;
+  //int temp2 =0;
   //int check_running =0;
   struct proc *np;
   struct proc *p1;
   struct proc *curproc = myproc();
   
   
-  if(c1 < 3){
+  /*if(c1 < 3){
   for(p1 = ptable.proc; p1 < &ptable.proc[NPROC]; p1++){
 	   
 	   if(p1->pid ==1){
@@ -258,7 +258,7 @@ fork(void)
   	
   }
   c1 = c1+1;
-  }
+  }*/
   
   
 
@@ -282,14 +282,13 @@ fork(void)
   *np->tf = *curproc->tf;
   np->nv = curproc->nv;
   np->weight = curproc->weight;
-  if(curproc->vruntime >=0){
-  np->fvruntime = curproc->vruntime;
+  //if(curproc->vruntime >=0){
+  
   np->vruntime = curproc->vruntime;
-  }
-  else{
-  np->fvruntime = curproc->fvruntime;
+  //}
+ /* else{
   np->vruntime = 0;
-  }
+  }*/
   
   // Clear %eax so that fork returns 0 in the child.
   np->tf->eax = 0;
@@ -745,7 +744,9 @@ wakeup1(void *chan)
 	  }
 	  
 	  p->vruntime = min_vruntime -(1000 * 335/(p->weight));
-	  
+	  if(p->vruntime <0){
+	  	p->vruntime =0;
+	  }
   
   }
   

@@ -55,7 +55,6 @@ struct proc {
   int time_slice;
   int weight;
   int nruntime;
-  int fvruntime;
   int extend_v;
   //int extend_fv;
 };
